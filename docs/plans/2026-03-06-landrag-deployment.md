@@ -1,15 +1,26 @@
 # landRAG Deployment Plan
 
+## Config
+
+| Setting | Value |
+|---------|-------|
+| GCP Project ID | `landrag` |
+| GCP Project Number | `1031825367236` |
+| Region | `europe-west2` (London) |
+| Domain | `landrag.softmaxco.io` |
+| Registrar | Porkbun |
+| GitHub repo | `https://github.com/kalebsofer/landRAG` |
+| Pinecone index (prod) | `landrag-prod` |
+| Pinecone index (dev) | `landrag-dev` |
+
 ## Domain
 
-- **URL:** https://landrag.softmaxco.io
-- **Registrar:** Porkbun
 - **DNS record (done):** CNAME `landrag` → `ghs.googlehosted.com` (TTL 600)
 - **SSL:** Automatic via Cloud Run domain mapping
 
 ## GCP Project Setup
 
-1. Create a GCP project
+1. Create a GCP project (done — `landrag`)
 2. Enable billing
 3. Enable APIs: Cloud Run, Cloud SQL, Memorystore, Cloud Storage, Secret Manager, Artifact Registry, Cloud Build
 
@@ -32,9 +43,9 @@
 
 - Create a Docker repository for container images
 
-### Pinecone
+### Pinecone (done)
 
-- Create production index (separate from `landrag-dev`)
+- Production index: `landrag-prod`
 - Dimensions: 3072 (text-embedding-3-large)
 
 ## Secrets
@@ -79,6 +90,7 @@ Grant Cloud Run service accounts `secretmanager.secretAccessor` role.
 
 ## CI/CD (GitHub Actions)
 
+- **Repo:** `https://github.com/kalebsofer/landRAG`
 - **Auth:** Workload Identity Federation (preferred) or service account key
 - **On push:** ruff (lint), mypy (type check), pytest (tests)
 - **On merge to main:** Build + push image to Artifact Registry, `gcloud run deploy` API + worker

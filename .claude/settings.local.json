@@ -13,7 +13,9 @@
       "WebFetch(domain:infrastructure.planninginspectorate.gov.uk)",
       "WebFetch(domain:national-infrastructure-consenting.planninginspectorate.gov.uk)",
       "Bash(.venv/Scripts/alembic:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(docker:*)",
+      "Bash(chmod +x:*)"
     ]
   }
 }
