@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import sys
 
 
 def main():
@@ -10,7 +9,8 @@ def main():
     parser.add_argument(
         "--projects",
         nargs="*",
-        help="Specific project references to ingest (e.g. EN010012). If omitted, ingests all energy projects.",
+        help="Specific project references to ingest (e.g. EN010012). "
+        "If omitted, ingests all energy projects.",
     )
     parser.add_argument(
         "--max-docs",

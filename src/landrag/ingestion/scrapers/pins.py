@@ -101,7 +101,9 @@ def fetch_document_library_page(
     for link in soup.find_all("a", href=True):
         href = link["href"]
         # Document links point to the CDN or contain the project reference
-        if not (href.endswith(".pdf") or f"{project_reference}" in href and "document" in href.lower()):
+        if not (
+            href.endswith(".pdf") or f"{project_reference}" in href and "document" in href.lower()
+        ):
             continue
         if href.endswith(".pdf"):
             title = link.get_text(strip=True)
@@ -129,9 +131,12 @@ def fetch_document_library_page(
 
     # Try to extract total count from the page
     total_count = 0
-    count_text = soup.find(string=lambda t: t and "document" in t.lower() and any(c.isdigit() for c in t))
+    count_text = soup.find(
+        string=lambda t: t and "document" in t.lower() and any(c.isdigit() for c in t)
+    )
     if count_text:
         import re
+
         match = re.search(r"(\d+)\s*document", count_text.lower())
         if match:
             total_count = int(match.group(1))

@@ -70,7 +70,11 @@ def ingest_projects(session: Session) -> list[Project]:
     """Fetch PINS project list and store energy projects in the database."""
     nsip_projects = fetch_project_list()
     energy_projects = [p for p in nsip_projects if _is_energy_project(p)]
-    logger.info("Found %d energy projects out of %d total", len(energy_projects), len(nsip_projects))
+    logger.info(
+        "Found %d energy projects out of %d total",
+        len(energy_projects),
+        len(nsip_projects),
+    )
 
     db_projects: list[Project] = []
     for p in energy_projects:
@@ -129,9 +133,9 @@ def process_and_ingest_document(
         select(Document).where(Document.source_url == doc_url)
     ).scalar_one_or_none()
     if existing:
-        existing_chunks = session.execute(
-            select(Chunk).where(Chunk.document_id == existing.id)
-        ).scalars().all()
+        existing_chunks = (
+            session.execute(select(Chunk).where(Chunk.document_id == existing.id)).scalars().all()
+        )
         if existing_chunks:
             logger.debug("Already processed: %s (%d chunks)", doc_title, len(existing_chunks))
             return len(existing_chunks)
@@ -184,26 +188,28 @@ def process_and_ingest_document(
             )
             session.add(db_chunk)
 
-            pinecone_vectors.append({
-                "id": pinecone_id,
-                "values": embedding,
-                "metadata": {
-                    "text": chunk.text[:1000],
-                    "project_type": project.type,
-                    "document_type": doc.type,
-                    "topic": chunk.section_heading or "",
-                    "decision": project.decision or "",
-                    "date_published": str(doc.date_published) if doc.date_published else "",
-                    "region": project.region,
-                    "capacity_mw": project.capacity_mw or 0,
-                    "project_reference": project.reference,
-                    "document_title": doc.title,
-                    "project_name": project.name,
-                    "source_url": doc.source_url,
-                    "page_start": chunk.chunk_index,
-                    "page_end": chunk.chunk_index,
-                },
-            })
+            pinecone_vectors.append(
+                {
+                    "id": pinecone_id,
+                    "values": embedding,
+                    "metadata": {
+                        "text": chunk.text[:1000],
+                        "project_type": project.type,
+                        "document_type": doc.type,
+                        "topic": chunk.section_heading or "",
+                        "decision": project.decision or "",
+                        "date_published": str(doc.date_published) if doc.date_published else "",
+                        "region": project.region,
+                        "capacity_mw": project.capacity_mw or 0,
+                        "project_reference": project.reference,
+                        "document_title": doc.title,
+                        "project_name": project.name,
+                        "source_url": doc.source_url,
+                        "page_start": chunk.chunk_index,
+                        "page_end": chunk.chunk_index,
+                    },
+                }
+            )
 
         # Upsert to Pinecone in batches of 100
         for i in range(0, len(pinecone_vectors), 100):
@@ -230,7 +236,8 @@ def run_pipeline(
     """Run the full ingestion pipeline.
 
     Args:
-        project_references: Specific project references to ingest. If None, ingest all energy projects.
+        project_references: Specific project references to ingest.
+            If None, ingest all energy projects.
         max_documents_per_project: Limit documents per project (useful for testing).
     """
     settings = get_settings()
