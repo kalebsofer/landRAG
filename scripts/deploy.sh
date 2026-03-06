@@ -32,7 +32,7 @@ gcloud run deploy landrag \
   --set-env-vars="DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD}@/landrag?host=/cloudsql/${CLOUD_SQL_CONNECTION}" \
   --set-env-vars="DATABASE_URL_SYNC=postgresql+psycopg2://postgres:${DB_PASSWORD}@/landrag?host=/cloudsql/${CLOUD_SQL_CONNECTION}" \
   --set-env-vars="APP_ENV=production" \
-  --set-env-vars="PINECONE_INDEX_NAME=landrag-dev" \
+  --set-env-vars="PINECONE_INDEX_NAME=landrag-prod" \
   --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
   --set-secrets="PINECONE_API_KEY=pinecone-api-key:latest" \
   --set-secrets="COHERE_API_KEY=cohere-api-key:latest" \
@@ -43,9 +43,19 @@ gcloud run deploy landrag \
   --max-instances=3 \
   --port=8080
 
+# Map custom domain (idempotent)
+echo "Mapping domain..."
+gcloud beta run domain-mappings create \
+  --service=landrag \
+  --domain=landrag.softmaxco.io \
+  --region="$GCP_REGION" \
+  --project="$GCP_PROJECT" \
+  2>/dev/null || echo "Domain mapping already exists"
+
 # Show URL
 echo ""
 echo "=== Deployment complete ==="
 SERVICE_URL=$(gcloud run services describe landrag --region="$GCP_REGION" --project="$GCP_PROJECT" --format='value(status.url)')
 echo "Service URL: $SERVICE_URL"
+echo "Custom domain: https://landrag.softmaxco.io"
 echo "Health check: curl $SERVICE_URL/health"
