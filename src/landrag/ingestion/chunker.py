@@ -66,7 +66,9 @@ def _split_large_paragraph(text: str, max_tokens: int, overlap_tokens: int) -> l
     return pieces
 
 
-def _chunk_text(text: str, config: ChunkConfig, start_index: int, heading: str | None = None) -> list[TextChunk]:
+def _chunk_text(
+    text: str, config: ChunkConfig, start_index: int, heading: str | None = None
+) -> list[TextChunk]:
     if _count_tokens(text) <= config.max_tokens:
         return [TextChunk(text=text, chunk_index=start_index, section_heading=heading)]
 
@@ -90,11 +92,13 @@ def _chunk_text(text: str, config: ChunkConfig, start_index: int, heading: str |
         para_tokens = _count_tokens(para)
 
         if current_tokens + para_tokens > config.max_tokens and current_parts:
-            chunks.append(TextChunk(
-                text="\n\n".join(current_parts),
-                chunk_index=idx,
-                section_heading=heading,
-            ))
+            chunks.append(
+                TextChunk(
+                    text="\n\n".join(current_parts),
+                    chunk_index=idx,
+                    section_heading=heading,
+                )
+            )
             idx += 1
 
             # Overlap: keep last paragraph(s) up to overlap_tokens
@@ -114,11 +118,13 @@ def _chunk_text(text: str, config: ChunkConfig, start_index: int, heading: str |
         current_tokens += para_tokens
 
     if current_parts:
-        chunks.append(TextChunk(
-            text="\n\n".join(current_parts),
-            chunk_index=idx,
-            section_heading=heading,
-        ))
+        chunks.append(
+            TextChunk(
+                text="\n\n".join(current_parts),
+                chunk_index=idx,
+                section_heading=heading,
+            )
+        )
 
     return chunks
 
@@ -132,7 +138,9 @@ def chunk_document(doc: ParsedDocument, config: ChunkConfig | None = None) -> li
         chunks: list[TextChunk] = []
         idx = 0
         for section in doc.sections:
-            section_text = f"{section.heading}\n\n{section.content}" if section.content else section.heading
+            section_text = (
+                f"{section.heading}\n\n{section.content}" if section.content else section.heading
+            )
             section_chunks = _chunk_text(section_text, config, idx, heading=section.heading)
             chunks.extend(section_chunks)
             idx += len(section_chunks)

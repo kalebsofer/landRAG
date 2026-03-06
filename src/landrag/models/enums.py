@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class ProjectType(str, Enum):
+class ProjectType(StrEnum):
     ONSHORE_WIND = "onshore_wind"
     OFFSHORE_WIND = "offshore_wind"
     SOLAR = "solar"
@@ -13,7 +13,7 @@ class ProjectType(str, Enum):
     OTHER = "other"
 
 
-class DocumentType(str, Enum):
+class DocumentType(StrEnum):
     DECISION_LETTER = "decision_letter"
     EIA_CHAPTER = "eia_chapter"
     INSPECTOR_REPORT = "inspector_report"
@@ -22,7 +22,7 @@ class DocumentType(str, Enum):
     GUIDANCE = "guidance"
 
 
-class Topic(str, Enum):
+class Topic(StrEnum):
     NOISE = "noise"
     ECOLOGY = "ecology"
     LANDSCAPE = "landscape"
@@ -37,7 +37,7 @@ class Topic(str, Enum):
     CONSTRUCTION = "construction"
 
 
-class SourcePortal(str, Enum):
+class SourcePortal(StrEnum):
     PINS = "pins"
     LPA = "lpa"
     EA = "ea"
@@ -45,14 +45,14 @@ class SourcePortal(str, Enum):
     GOV = "gov"
 
 
-class DecisionOutcome(str, Enum):
+class DecisionOutcome(StrEnum):
     GRANTED = "granted"
     REFUSED = "refused"
     WITHDRAWN = "withdrawn"
     PENDING = "pending"
 
 
-class JobStatus(str, Enum):
+class JobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"

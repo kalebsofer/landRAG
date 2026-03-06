@@ -1,6 +1,4 @@
-import pytest
-
-from landrag.ingestion.chunker import chunk_document, ChunkConfig
+from landrag.ingestion.chunker import ChunkConfig, chunk_document
 from landrag.ingestion.parsers.html import ParsedDocument, ParsedSection
 
 

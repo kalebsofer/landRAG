@@ -1,18 +1,17 @@
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 from sqlalchemy import (
+    ARRAY,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
     String,
     Text,
-    Float,
-    Integer,
-    Boolean,
-    DateTime,
-    Date,
-    ForeignKey,
-    ARRAY,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -33,8 +32,14 @@ class Project(Base):
     capacity_mw: Mapped[float | None] = mapped_column(Float, nullable=True)
     decision: Mapped[str | None] = mapped_column(String(20), nullable=True)
     decision_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+    )
 
     documents: Mapped[list["Document"]] = relationship(back_populates="project")
 
@@ -52,7 +57,9 @@ class Document(Base):
     source_portal: Mapped[str] = mapped_column(String(20))
     retrieved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     storage_path: Mapped[str] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     project: Mapped["Project"] = relationship(back_populates="documents")
     chunks: Mapped[list["Chunk"]] = relationship(back_populates="document")
@@ -70,7 +77,9 @@ class Chunk(Base):
     page_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
     page_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
     pinecone_id: Mapped[str] = mapped_column(String(100), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     document: Mapped["Document"] = relationship(back_populates="chunks")
 
@@ -86,4 +95,6 @@ class IngestionJob(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )

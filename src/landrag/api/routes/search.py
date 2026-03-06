@@ -1,16 +1,16 @@
 from fastapi import APIRouter
 
-from landrag.models.schemas import SearchRequest, SearchResponse
+from landrag.models.schemas import SearchRequest
 
 router = APIRouter(prefix="/v1")
 
 
 def execute_search(request: SearchRequest) -> dict:
     """Execute the full search pipeline. Wired up to real retrieval in integration."""
+    from landrag.core.pinecone import build_metadata_filter, get_pinecone_index
     from landrag.ingestion.embedder import embed_query
-    from landrag.core.pinecone import get_pinecone_index, build_metadata_filter
-    from landrag.search.retrieval import bm25_rescore, combine_scores
     from landrag.search.reranker import rerank
+    from landrag.search.retrieval import bm25_rescore, combine_scores
 
     # 1. Embed query
     query_embedding = embed_query(request.query)
@@ -36,8 +36,8 @@ def execute_search(request: SearchRequest) -> dict:
     # 4. BM25 re-score
     bm25_scores = bm25_rescore(texts, request.query)
 
-    # 5. Combine scores
-    combined = combine_scores(dense_scores, bm25_scores)
+    # 5. Combine scores (used for fallback ranking; reranker overrides order)
+    combine_scores(dense_scores, bm25_scores)
 
     # 6. Rerank top candidates
     reranked = rerank(request.query, texts, top_n=request.limit)
@@ -48,21 +48,23 @@ def execute_search(request: SearchRequest) -> dict:
         idx = r["index"]
         match = pinecone_results.matches[idx]
         meta = match.metadata
-        results.append({
-            "chunk_id": chunk_ids[idx],
-            "content": texts[idx],
-            "score": r["score"],
-            "highlight": texts[idx][:200],
-            "document_title": meta.get("document_title", ""),
-            "document_type": meta.get("document_type", ""),
-            "project_name": meta.get("project_name", ""),
-            "project_reference": meta.get("project_reference", ""),
-            "project_type": meta.get("project_type", ""),
-            "topic": meta.get("topic"),
-            "source_url": meta.get("source_url", ""),
-            "page_start": meta.get("page_start"),
-            "page_end": meta.get("page_end"),
-        })
+        results.append(
+            {
+                "chunk_id": chunk_ids[idx],
+                "content": texts[idx],
+                "score": r["score"],
+                "highlight": texts[idx][:200],
+                "document_title": meta.get("document_title", ""),
+                "document_type": meta.get("document_type", ""),
+                "project_name": meta.get("project_name", ""),
+                "project_reference": meta.get("project_reference", ""),
+                "project_type": meta.get("project_type", ""),
+                "topic": meta.get("topic"),
+                "source_url": meta.get("source_url", ""),
+                "page_start": meta.get("page_start"),
+                "page_end": meta.get("page_end"),
+            }
+        )
 
     return {"results": results, "total_estimate": len(results)}
 

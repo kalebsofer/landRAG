@@ -1,6 +1,6 @@
 from landrag.core.pinecone import build_metadata_filter
-from landrag.models.enums import ProjectType, Topic, DecisionOutcome
-from landrag.models.schemas import SearchFilters, DateRange
+from landrag.models.enums import DecisionOutcome, ProjectType, Topic
+from landrag.models.schemas import DateRange, SearchFilters
 
 
 def test_build_metadata_filter_empty():

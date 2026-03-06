@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from landrag.ingestion.parsers.pdf import extract_pdf, PdfQualityResult
+from landrag.ingestion.parsers.pdf import PdfQualityResult, extract_pdf
 
 
 def _mock_pdf_reader(pages: list[str]):

@@ -1,7 +1,7 @@
-from landrag.workers.celery_app import celery_app
-from landrag.ingestion.parsers.pdf import extract_pdf
-from landrag.ingestion.parsers.html import extract_html, ParsedDocument
 from landrag.ingestion.parsers.docx import extract_docx
+from landrag.ingestion.parsers.html import ParsedDocument, extract_html
+from landrag.ingestion.parsers.pdf import extract_pdf
+from landrag.workers.celery_app import celery_app
 
 
 @celery_app.task(name="landrag.workers.tasks.parse_document")
@@ -26,8 +26,8 @@ def parse_document(file_path: str, file_format: str) -> dict:
 @celery_app.task(name="landrag.workers.tasks.chunk_and_embed")
 def chunk_and_embed(parsed_data: dict, document_id: str) -> dict:
     from landrag.ingestion.chunker import chunk_document
-    from landrag.ingestion.parsers.html import ParsedDocument, ParsedSection
     from landrag.ingestion.embedder import embed_texts
+    from landrag.ingestion.parsers.html import ParsedSection
 
     doc = ParsedDocument(
         text=parsed_data["text"],

@@ -19,7 +19,4 @@ def combine_scores(
     max_bm25 = max(bm25_scores) if bm25_scores and max(bm25_scores) > 0 else 1.0
     normalized_bm25 = [s / max_bm25 for s in bm25_scores]
 
-    return [
-        dense_weight * d + bm25_weight * b
-        for d, b in zip(dense_scores, normalized_bm25)
-    ]
+    return [dense_weight * d + bm25_weight * b for d, b in zip(dense_scores, normalized_bm25)]

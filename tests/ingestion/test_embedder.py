@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from landrag.ingestion.embedder import embed_texts, embed_query
+from landrag.ingestion.embedder import embed_query, embed_texts
 
 
 @patch("landrag.ingestion.embedder.get_openai_client")

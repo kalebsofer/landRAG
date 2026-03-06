@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from landrag.models.enums import DecisionOutcome, DocumentType, ProjectType, Topic
-from landrag.models.schemas import SearchFilters, SearchRequest, SearchResponse, ChunkResult
+from landrag.models.schemas import ChunkResult, SearchFilters, SearchRequest, SearchResponse
 
 
 def test_search_request_minimal():

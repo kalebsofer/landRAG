@@ -41,14 +41,16 @@ def parse_nsip_project_list_page(html: str) -> list[NsipProject]:
         name = link.get_text(strip=True)
         reference = extract_pins_reference(url_path) or extract_pins_reference(name) or ""
 
-        projects.append(NsipProject(
-            reference=reference,
-            name=name,
-            project_type=cells[1].get_text(strip=True),
-            local_authority=cells[2].get_text(strip=True),
-            decision=cells[3].get_text(strip=True),
-            url_path=url_path,
-        ))
+        projects.append(
+            NsipProject(
+                reference=reference,
+                name=name,
+                project_type=cells[1].get_text(strip=True),
+                local_authority=cells[2].get_text(strip=True),
+                decision=cells[3].get_text(strip=True),
+                url_path=url_path,
+            )
+        )
 
     return projects
 
@@ -66,12 +68,14 @@ def parse_document_library_page(html: str, project_reference: str) -> list[Docum
         if not link:
             continue
 
-        docs.append(DocumentLink(
-            title=link.get_text(strip=True),
-            url_path=link.get("href", ""),
-            category=cells[1].get_text(strip=True),
-            date_str=cells[2].get_text(strip=True),
-            project_reference=project_reference,
-        ))
+        docs.append(
+            DocumentLink(
+                title=link.get_text(strip=True),
+                url_path=link.get("href", ""),
+                category=cells[1].get_text(strip=True),
+                date_str=cells[2].get_text(strip=True),
+                project_reference=project_reference,
+            )
+        )
 
     return docs

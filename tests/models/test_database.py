@@ -1,14 +1,12 @@
+from datetime import UTC, datetime
 from uuid import uuid4
-from datetime import datetime, date, UTC
 
-from landrag.models.database import Project, Document, Chunk, IngestionJob
+from landrag.models.database import Chunk, Document, IngestionJob, Project
 from landrag.models.enums import (
-    ProjectType,
     DocumentType,
-    SourcePortal,
-    DecisionOutcome,
     JobStatus,
-    Topic,
+    ProjectType,
+    SourcePortal,
 )
 
 

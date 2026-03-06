@@ -10,7 +10,10 @@ def test_extract_html_basic():
 
 
 def test_extract_html_strips_scripts_and_styles():
-    html = "<html><head><style>body{color:red}</style></head><body><script>alert(1)</script><p>Content</p></body></html>"
+    html = (
+        "<html><head><style>body{color:red}</style></head>"
+        "<body><script>alert(1)</script><p>Content</p></body></html>"
+    )
     result = extract_html(html)
     assert "alert" not in result.text
     assert "color:red" not in result.text
@@ -18,7 +21,10 @@ def test_extract_html_strips_scripts_and_styles():
 
 
 def test_extract_html_preserves_structure():
-    html = "<html><body><h2>Section 1</h2><p>Text.</p><h2>Section 2</h2><p>More text.</p></body></html>"
+    html = (
+        "<html><body><h2>Section 1</h2><p>Text.</p>"
+        "<h2>Section 2</h2><p>More text.</p></body></html>"
+    )
     result = extract_html(html)
     assert result.sections is not None
     assert len(result.sections) >= 2

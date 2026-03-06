@@ -16,7 +16,4 @@ def rerank(query: str, texts: list[str], top_n: int = 10) -> list[dict]:
         documents=texts,
         top_n=top_n,
     )
-    return [
-        {"index": r.index, "score": r.relevance_score}
-        for r in response.results
-    ]
+    return [{"index": r.index, "score": r.relevance_score} for r in response.results]

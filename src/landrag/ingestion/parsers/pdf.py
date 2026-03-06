@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from pypdf import PdfReader
 
 from landrag.ingestion.parsers.html import ParsedDocument
 
 
-class PdfQualityResult(str, Enum):
+class PdfQualityResult(StrEnum):
     GOOD = "good"
     LOW = "low"
 

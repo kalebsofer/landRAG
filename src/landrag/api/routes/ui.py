@@ -5,12 +5,14 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from landrag.api.routes.search import execute_search
-from landrag.models.schemas import SearchRequest, SearchFilters
-from landrag.models.enums import ProjectType, Topic, DecisionOutcome
+from landrag.models.enums import DecisionOutcome, ProjectType, Topic
+from landrag.models.schemas import SearchFilters, SearchRequest
 
 router = APIRouter()
 
-templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent.parent / "templates"))
+templates = Jinja2Templates(
+    directory=str(Path(__file__).resolve().parent.parent.parent / "templates")
+)
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -44,8 +46,12 @@ async def search_page(
     )
     data = execute_search(search_request)
 
-    return templates.TemplateResponse(request, "results.html", {
-        "query": query,
-        "results": data["results"],
-        "total_estimate": data["total_estimate"],
-    })
+    return templates.TemplateResponse(
+        request,
+        "results.html",
+        {
+            "query": query,
+            "results": data["results"],
+            "total_estimate": data["total_estimate"],
+        },
+    )
