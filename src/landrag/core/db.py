@@ -7,7 +7,7 @@ from landrag.core.config import get_settings
 
 def get_async_engine():
     settings = get_settings()
-    return create_async_engine(settings.database_url, echo=settings.app_env == "development")
+    return create_async_engine(settings.database_url, echo=False)
 
 
 def get_async_session_factory() -> async_sessionmaker[AsyncSession]:
@@ -17,7 +17,7 @@ def get_async_session_factory() -> async_sessionmaker[AsyncSession]:
 
 def get_sync_engine():
     settings = get_settings()
-    return create_engine(settings.database_url_sync, echo=settings.app_env == "development")
+    return create_engine(settings.database_url_sync, echo=False)
 
 
 def get_sync_session_factory() -> sessionmaker:

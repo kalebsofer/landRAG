@@ -26,7 +26,7 @@ class Project(Base):
     name: Mapped[str] = mapped_column(String(500))
     reference: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     type: Mapped[str] = mapped_column(String(50))
-    local_authority: Mapped[str] = mapped_column(String(200))
+    local_authority: Mapped[str] = mapped_column(Text)
     region: Mapped[str] = mapped_column(String(100))
     coordinates: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
     capacity_mw: Mapped[float | None] = mapped_column(Float, nullable=True)

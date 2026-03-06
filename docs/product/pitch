@@ -1,0 +1,80 @@
+# PlanRAG — Investor Pitch Deck
+
+---
+
+## Slide 1: The Bottleneck Blocking Britain's Energy Transition
+
+The UK has **legally binding targets**: clean power by 2030, net zero by 2050. Delivering them requires consenting **~100GW** of new energy infrastructure through the planning system.
+
+**The planning system cannot cope.**
+
+| Metric | Reality |
+|--------|---------|
+| Grid connection queue | **733 GW** waiting (National Grid ESO, 2024) — 7x what the UK actually needs |
+| Avg. NSIP consent timeline | **4.2 years** from application to decision — double the statutory target |
+| NSIP applications in system | **130+** nationally significant projects, each generating **10,000–50,000 pages** of documents |
+| Planning appeal decisions (all types) | **~15,000/year** from the Planning Inspectorate alone |
+| Government response | NSIP Action Plan (2023), Planning Reform Bill, Electricity Networks Commissioner — all identify consenting speed as the **#1 blocker** |
+
+The consultants, lawyers, and developers navigating this system still work by **manually reading PDFs**. There is no semantic search, no cross-project analysis, no structured precedent database.
+
+> *"The consenting process is the single greatest risk to the UK's energy security."*
+> — Electricity Networks Commissioner Report, 2023
+
+---
+
+## Slide 2: PlanRAG — Precedent Search for Energy Planning
+
+**AI-powered search across every publicly available UK planning decision, EIA, and inspector report.**
+
+A consultant preparing a solar farm application currently spends **3–5 days** manually finding comparable decisions. PlanRAG delivers the same answer in **seconds**.
+
+**Example queries:**
+- *"What noise conditions were imposed on onshore wind farms within 500m of dwellings?"*
+- *"Compare biodiversity net gain requirements across solar farms consented in 2023–2025"*
+- *"Show all NSIP decisions where landscape impact was the primary reason for refusal"*
+
+**How it works:**
+```
+Public planning portals → Ingestion pipeline (OCR + parsing) → Vector search + metadata filters → Source-cited answers
+```
+
+**Defensibility:**
+- **Corpus is the moat** — millions of pages scraped, parsed, OCR'd, classified, and indexed. Public data, but extraordinarily messy to assemble. No one has done this.
+- **Domain-specific retrieval tuning** — planning language is specialised; generic search tools (Google, Bing) perform poorly on queries like "CEMP condition precedent for battery storage DCO"
+- **Network effects** — every user query improves ranking; every new document strengthens cross-referencing
+
+---
+
+## Slide 3: The Market & The Ask
+
+### Target Market
+
+The UK environmental & planning consultancy sector is worth **£3.5B+** annually (Environment Analyst, 2024). Our beachhead:
+
+| Segment | UK firms | Spend on planning/EIA per project | Annual market |
+|---------|----------|-----------------------------------|---------------|
+| Environmental consultancies | ~500 firms (top 50 hold 70% share) | £200k–£2M per major project | ~£1.5B |
+| Energy developers | ~150 active (renewables + storage) | £500k–£5M consenting cost per project | ~£1.2B |
+| Planning & energy law firms | ~30 specialist firms | £100k–£500k legal fees per project | ~£300M |
+
+**These are high-margin, time-poor professionals** who bill £150–£400/hour. A tool saving 20 hours per project justifies **£5k–£20k/year per seat** easily.
+
+### Traction plan
+- **Phase 1 (now → month 3):** PINS corpus indexed — 130 NSIP projects + 5 years of energy appeal decisions
+- **Phase 2 (month 3–6):** Design partners from 3–5 top-30 environmental consultancies. Paid pilots.
+- **Phase 3 (month 6–12):** LPA expansion, API access, commercial launch. Target: **£500k ARR**
+
+### The Ask
+
+**£750k pre-seed** to build the corpus, ship the product, and sign 10 paying accounts.
+
+- 60% engineering (ingestion pipeline, retrieval, UI)
+- 25% data acquisition & quality (scraping, OCR, evaluation)
+- 15% GTM (industry conferences: PINS Forum, RenewableUK, Solar & Storage Live)
+
+**Why now:** The UK government is actively reforming planning to hit 2030 targets. Every reform increases document volume and system complexity. The consultants drowning in paper today are tomorrow's customers.
+
+---
+
+*PlanRAG — making the UK's planning system searchable for the first time.*

@@ -15,5 +15,6 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
+data/
 
 .claude/
