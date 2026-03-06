@@ -37,9 +37,6 @@ def test_cors_headers_present():
 
 def test_health_returns_db_status():
     """Health endpoint should report database connectivity."""
-    from fastapi.testclient import TestClient
-    from landrag.api.app import create_app
-
     client = TestClient(create_app())
 
     # Mock the sync engine to simulate a working DB
@@ -61,14 +58,15 @@ def test_health_returns_db_status():
 
 def test_health_reports_db_failure():
     """Health endpoint should report database failure gracefully."""
-    from fastapi.testclient import TestClient
-    from landrag.api.app import create_app
-
     client = TestClient(create_app())
 
-    with patch("landrag.api.routes.health.get_sync_engine", side_effect=Exception("connection refused")):
+    with patch(
+        "landrag.api.routes.health.get_sync_engine",
+        side_effect=Exception("connection refused"),
+    ):
         response = client.get("/health")
 
     assert response.status_code == 200
     data = response.json()
+    assert data["status"] == "degraded"
     assert data["database"] == "error"
