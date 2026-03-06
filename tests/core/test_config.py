@@ -1,8 +1,13 @@
 from landrag.core.config import Settings, get_settings
 
 
-def test_settings_defaults():
+def test_settings_defaults(monkeypatch):
+    # Prevent pydantic-settings from reading .env so we test true defaults
+    monkeypatch.delenv("APP_ENV", raising=False)
+    monkeypatch.delenv("PINECONE_INDEX_NAME", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     s = Settings(
+        _env_file=None,
         pinecone_api_key="k",
         openai_api_key="k",
         cohere_api_key="k",
