@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ document.title }} - landRAG{% endblock %}
+{% block content %}
+<hgroup>
+    <h2>{{ document.title }}</h2>
+    <p>{{ document.project_name }} ({{ document.project_reference }})</p>
+</hgroup>
+
+<table>
+    <tr><td>Type</td><td>{{ document.document_type }}</td></tr>
+    <tr><td>Source</td><td>{{ document.source_portal }}</td></tr>
+    <tr><td>Published</td><td>{{ document.date_published or 'Unknown' }}</td></tr>
+    <tr><td>Format</td><td>{{ document.file_format }}</td></tr>
+</table>
+
+<p><a href="{{ document.source_url }}" target="_blank" rel="noopener">View original document</a></p>
+
+{% if chunks %}
+<h3>Document Chunks</h3>
+{% for chunk in chunks %}
+<article class="result-card">
+    <p class="meta">
+        Chunk {{ chunk.chunk_index + 1 }}
+        {% if chunk.topic %}<span class="badge">{{ chunk.topic }}</span>{% endif %}
+        {% if chunk.page_start %}| Pages {{ chunk.page_start }}–{{ chunk.page_end }}{% endif %}
+    </p>
+    <p>{{ chunk.content[:500] }}{% if chunk.content|length > 500 %}...{% endif %}</p>
+</article>
+{% endfor %}
+{% endif %}
+{% endblock %}

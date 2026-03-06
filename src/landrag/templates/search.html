@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}landRAG - Search{% endblock %}
+{% block content %}
+<h1>landRAG</h1>
+<p>Search UK planning decisions, EIAs, and inspector reports.</p>
+
+<form action="/search" method="get">
+    <fieldset role="group">
+        <input type="search" name="query" placeholder="e.g. noise conditions on onshore wind farms" value="{{ query or '' }}" required>
+        <button type="submit">Search</button>
+    </fieldset>
+
+    <details class="filter-panel">
+        <summary>Filters</summary>
+        <div class="grid">
+            <label>
+                Project Type
+                <select name="project_type">
+                    <option value="">All</option>
+                    <option value="onshore_wind">Onshore Wind</option>
+                    <option value="offshore_wind">Offshore Wind</option>
+                    <option value="solar">Solar</option>
+                    <option value="battery_storage">Battery Storage</option>
+                    <option value="gas_peaker">Gas Peaker</option>
+                    <option value="transmission">Transmission</option>
+                    <option value="hydrogen">Hydrogen</option>
+                    <option value="ccus">CCUS</option>
+                </select>
+            </label>
+            <label>
+                Topic
+                <select name="topic">
+                    <option value="">All</option>
+                    <option value="noise">Noise</option>
+                    <option value="ecology">Ecology</option>
+                    <option value="landscape">Landscape</option>
+                    <option value="traffic">Traffic</option>
+                    <option value="flood_risk">Flood Risk</option>
+                    <option value="cultural_heritage">Cultural Heritage</option>
+                    <option value="air_quality">Air Quality</option>
+                    <option value="socioeconomic">Socioeconomic</option>
+                    <option value="cumulative_impact">Cumulative Impact</option>
+                </select>
+            </label>
+            <label>
+                Decision
+                <select name="decision">
+                    <option value="">All</option>
+                    <option value="granted">Granted</option>
+                    <option value="refused">Refused</option>
+                </select>
+            </label>
+        </div>
+    </details>
+</form>
+{% endblock %}

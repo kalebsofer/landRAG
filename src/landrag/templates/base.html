@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}landRAG{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <style>
+        .result-card { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--pico-muted-border-color); border-radius: var(--pico-border-radius); }
+        .result-card h4 { margin-bottom: 0.25rem; }
+        .badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; background: var(--pico-primary-background); color: var(--pico-primary-inverse); }
+        .meta { font-size: 0.85rem; color: var(--pico-muted-color); }
+        .score { font-weight: bold; }
+        .filter-panel { margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <nav>
+            <ul><li><strong><a href="/">landRAG</a></strong></li></ul>
+        </nav>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

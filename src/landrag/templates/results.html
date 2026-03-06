@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Results - landRAG{% endblock %}
+{% block content %}
+<form action="/search" method="get">
+    <fieldset role="group">
+        <input type="search" name="query" value="{{ query }}" required>
+        <button type="submit">Search</button>
+    </fieldset>
+</form>
+
+<p class="meta">{{ total_estimate }} result{{ 's' if total_estimate != 1 else '' }} for "{{ query }}"</p>
+
+{% for result in results %}
+<article class="result-card">
+    <h4>{{ result.document_title }}</h4>
+    <p class="meta">
+        <strong>{{ result.project_name }}</strong> ({{ result.project_reference }})
+        {% if result.topic %}<span class="badge">{{ result.topic }}</span>{% endif %}
+        <span class="score">{{ "%.2f"|format(result.score) }}</span>
+    </p>
+    <p>{{ result.highlight }}</p>
+    <p class="meta">
+        {% if result.page_start %}Pages {{ result.page_start }}–{{ result.page_end }} | {% endif %}
+        <a href="{{ result.source_url }}" target="_blank" rel="noopener">View source</a>
+    </p>
+</article>
+{% else %}
+<p>No results found. Try a different query or adjust your filters.</p>
+{% endfor %}
+{% endblock %}
