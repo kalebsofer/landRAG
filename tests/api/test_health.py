@@ -13,9 +13,6 @@ def test_health_endpoint():
 
 def test_cors_headers_present():
     """Preflight OPTIONS request should return CORS headers."""
-    from fastapi.testclient import TestClient
-    from landrag.api.app import create_app
-
     client = TestClient(create_app())
     response = client.options(
         "/health",
