@@ -102,15 +102,15 @@ Accepts a message with conversation history and optional filters. Returns a stre
     {"role": "assistant", "content": "..."}
   ],
   "filters": {
-    "project_type": "OFFSHORE_WIND",
-    "topic": "NOISE"
+    "project_type": ["OFFSHORE_WIND"],
+    "topic": ["NOISE"]
   }
 }
 ```
 
 - `message` (string, required): The user's current message
 - `history` (array, optional): Previous conversation turns as role/content pairs
-- `filters` (object, optional): Explicitly pinned filters. All fields from the existing `SearchFilters` schema are supported: project_type, topic, document_type, decision, date_range, region, capacity_mw_range
+- `filters` (object, optional): Explicitly pinned filters. Reuses the existing `SearchFilters` schema directly — all fields are lists (e.g., `project_type: list[ProjectType]`) to support multi-select. Fields: project_type, topic, document_type, decision, date_range, region, capacity_mw_range. The frontend sends only non-empty fields; omitted fields are unconstrained.
 
 **SSE stream — three event types in order:**
 
@@ -129,7 +129,7 @@ data: {"text": "Hornsea Project Three"}
 3. **`event: done`** — Signals stream complete. Includes any LLM-suggested filters.
 ```
 event: done
-data: {"suggested_filters": {"project_type": "OFFSHORE_WIND", "topic": "NOISE"}}
+data: {"suggested_filters": {"project_type": ["OFFSHORE_WIND"], "topic": ["NOISE"]}}
 ```
 
 **Why sources first:** Search completes in ~1-2s. Emitting sources before the LLM starts gives users immediate feedback that retrieval worked. They can begin reading source cards while the answer streams in.
@@ -187,7 +187,8 @@ User message + history + filters
          │
          ▼
   ┌─────────────┐
-  │ 3. RETRIEVE │  Call existing execute_search() with rewritten query
+  │ 3. RETRIEVE │  Call retrieval pipeline directly (embed → Pinecone
+  │             │  → BM25 rescore → Cohere rerank)
   │             │  Merge: explicit user filters + LLM-suggested filters
   │             │  Returns top-k ChunkResults with scores
   └──────┬──────┘
@@ -238,13 +239,40 @@ Respond as JSON: {"query": "...", "filters": {"project_type": "...", ...}}
 
 On first messages (empty history), query rewriting is still applied for filter extraction but the query passes through largely unchanged.
 
+**Fallback:** If Haiku returns malformed JSON (rare but possible), fall back to using the original user message as the query with no suggested filters. Log the parsing failure for monitoring.
+
 ### Filter Merge Logic (Step 3)
 
-Explicit user-pinned filters always take precedence. LLM-suggested filters are additive only — they fill in unset filter fields but never override what the user explicitly set.
+Explicit user-pinned filters always take precedence. LLM-suggested filters are additive only — they fill in unset filter fields but never override what the user explicitly set. Since all filter fields are lists (matching `SearchFilters`), merge logic is per-field:
 
 ```python
-merged = {**suggested_filters, **explicit_filters}  # explicit wins
+def merge_filters(explicit: dict, suggested: dict) -> dict:
+    """Explicit filters win per-field. Suggested fills unset fields only."""
+    merged = {}
+    all_keys = set(list(explicit.keys()) + list(suggested.keys()))
+    for key in all_keys:
+        if key in explicit and explicit[key]:  # explicit wins if set
+            merged[key] = explicit[key]
+        elif key in suggested and suggested[key]:
+            merged[key] = suggested[key]
+    return merged
 ```
+
+The query rewriter returns filter suggestions as lists (matching the schema). The merge result is passed directly to `SearchFilters`.
+
+### Retrieval Integration (Step 3)
+
+The chat pipeline does **not** call `execute_search()` directly. That function lives in a route module and is synchronous. Instead, the chat pipeline calls the underlying retrieval functions from the search package directly:
+
+1. `embed_query()` — embed the rewritten query (OpenAI)
+2. `index.query()` — Pinecone dense retrieval with merged filters
+3. `bm25_rescore()` — BM25 re-scoring over candidates
+4. `combine_scores()` — weighted combination (0.7 dense, 0.3 BM25)
+5. `rerank()` — Cohere cross-encoder reranking
+
+These are wrapped in an async function using `asyncio.to_thread()` for the synchronous API calls (OpenAI, Pinecone, Cohere) so the SSE endpoint doesn't block the event loop. The result is a list of `ChunkResult` objects passed to deduplication and then prompt building.
+
+As part of this work, shared retrieval logic should be extracted from the route module (`src/landrag/api/routes/search.py`) into the search package (`src/landrag/search/retrieval.py`) so both the chat pipeline and the existing search endpoint can import it cleanly.
 
 ### Chunk Deduplication (Step 4)
 
@@ -415,8 +443,10 @@ All tests follow existing patterns: pytest with async fixtures, mocked external 
 ### Modified Files
 - `src/landrag/api/app.py` — Register chat and corpus routers, remove old UI router
 - `src/landrag/api/routes/ui.py` — Replace search page routes with chat page route
+- `src/landrag/api/routes/search.py` — Extract shared retrieval logic to search package
+- `src/landrag/search/retrieval.py` — Receive extracted retrieval functions from route module
 - `src/landrag/api/templates/base.html` — Update nav for chat-first layout
-- `src/landrag/core/config.py` — Add chat model settings (sonnet model name, max tokens)
+- `src/landrag/core/config.py` — Add chat model settings: `chat_model` (default `"claude-sonnet-4-20250514"`), `chat_max_tokens` (default `4096`), `rewriter_model` (default `"claude-haiku-4-5-20251001"`)
 - `src/landrag/models/schemas.py` — Add ChatRequest, ChatMessage, CorpusStatus schemas
 
 ### Removed
