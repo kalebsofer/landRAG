@@ -32,7 +32,7 @@ gcloud run deploy landrag \
   --set-env-vars="DATABASE_URL=postgresql+asyncpg://postgres:${DB_PASSWORD}@/landrag?host=/cloudsql/${CLOUD_SQL_CONNECTION}" \
   --set-env-vars="DATABASE_URL_SYNC=postgresql+psycopg2://postgres:${DB_PASSWORD}@/landrag?host=/cloudsql/${CLOUD_SQL_CONNECTION}" \
   --set-env-vars="APP_ENV=production" \
-  --set-env-vars="PINECONE_INDEX_NAME=landrag-prod" \
+  --set-env-vars="PINECONE_INDEX_NAME=landrag-dev" \
   --set-secrets="OPENAI_API_KEY=openai-api-key:latest" \
   --set-secrets="PINECONE_API_KEY=pinecone-api-key:latest" \
   --set-secrets="COHERE_API_KEY=cohere-api-key:latest" \

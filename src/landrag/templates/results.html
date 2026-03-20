@@ -8,6 +8,10 @@
     </fieldset>
 </form>
 
+{% if error %}
+<p class="error" style="color: var(--pico-del-color);">{{ error }}</p>
+{% endif %}
+
 <p class="meta">{{ total_estimate }} result{{ 's' if total_estimate != 1 else '' }} for "{{ query }}"</p>
 
 {% for result in results %}

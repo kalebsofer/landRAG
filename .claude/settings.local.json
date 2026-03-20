@@ -15,7 +15,30 @@
       "Bash(.venv/Scripts/alembic:*)",
       "Bash(rm:*)",
       "Bash(docker:*)",
-      "Bash(chmod +x:*)"
+      "Bash(chmod +x:*)",
+      "Bash(gcloud run:*)",
+      "Bash(grep -i pinecone requirements*.txt pyproject.toml)",
+      "Bash(ls:*)",
+      "Bash(wc -l /c/Users/kaleb/Code/landRAG/tests/**/*.py)",
+      "Bash(pip install:*)",
+      "Bash(pytest tests/ -x -q)",
+      "Bash(pytest tests/ -x -q --ignore=tests/workers)",
+      "Bash(pytest tests/ -x -q --ignore=tests/workers --ignore=tests/core/test_config.py)",
+      "Bash(find C:/Users/kaleb/Code/landRAG -type f -name *.html)",
+      "Bash(find C:/Users/kaleb/Code/landRAG -type f \\\\\\(-name *.css -o -name *.js \\\\\\))",
+      "Bash(xargs grep:*)",
+      "Bash(curl:*)",
+      "Bash(wc -l /c/Users/kaleb/Code/landRAG/src/landrag/**/*.py)",
+      "Bash(bash \"C:\\\\Users\\\\kaleb\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.5\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\kaleb\\\\Code\\\\landRAG\")",
+      "mcp__db-query__list_tables",
+      "Bash(psql \"postgresql://landrag:landrag@localhost:5432/landrag\" -c \"SELECT 1\")",
+      "Bash(gcloud sql:*)",
+      "Bash(1:*)",
+      "Bash(find /c/Users/kaleb/Code/landRAG -type f \\\\\\(-name *.ipynb -o -name *.py \\\\\\) -path */scripts/* -o -path */.superpowers/*)",
+      "Bash(git:*)",
+      "Bash(find /c/Users/kaleb/Code/landRAG/tests -name *pinecone* -o -name *search* -o -name *ingestion*)",
+      "Bash(find /c/Users/kaleb/Code/landRAG -maxdepth 2 -type f \\\\\\(-name *.ipynb -o -name *load* -o -name *sync* \\\\\\))",
+      "Bash(alembic upgrade:*)"
     ]
   }
 }

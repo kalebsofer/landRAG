@@ -44,7 +44,22 @@ async def search_page(
         query=query,
         filters=filters if has_filters else None,
     )
-    data = execute_search(search_request)
+    try:
+        data = execute_search(search_request)
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("Search failed")
+        return templates.TemplateResponse(
+            request,
+            "results.html",
+            {
+                "query": query,
+                "results": [],
+                "total_estimate": 0,
+                "error": "Search is temporarily unavailable. Please try again later.",
+            },
+        )
 
     return templates.TemplateResponse(
         request,
