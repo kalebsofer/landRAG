@@ -30,3 +30,18 @@ def test_get_settings_is_cached():
     s1 = get_settings()
     s2 = get_settings()
     assert s1 is s2
+
+
+def test_chat_model_defaults(monkeypatch):
+    monkeypatch.delenv("CHAT_MODEL", raising=False)
+    monkeypatch.delenv("REWRITER_MODEL", raising=False)
+    s = Settings(
+        _env_file=None,
+        pinecone_api_key="k",
+        openai_api_key="k",
+        cohere_api_key="k",
+        anthropic_api_key="k",
+    )
+    assert s.chat_model == "claude-sonnet-4-20250514"
+    assert s.chat_max_tokens == 4096
+    assert s.rewriter_model == "claude-haiku-4-5-20251001"

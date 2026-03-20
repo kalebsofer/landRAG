@@ -38,7 +38,10 @@
       "Bash(git:*)",
       "Bash(find /c/Users/kaleb/Code/landRAG/tests -name *pinecone* -o -name *search* -o -name *ingestion*)",
       "Bash(find /c/Users/kaleb/Code/landRAG -maxdepth 2 -type f \\\\\\(-name *.ipynb -o -name *load* -o -name *sync* \\\\\\))",
-      "Bash(alembic upgrade:*)"
+      "Bash(alembic upgrade:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff check:*)",
+      "Bash(ruff format:*)"
     ]
   }
 }

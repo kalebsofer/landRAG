@@ -1,0 +1,1185 @@
+{% extends "base.html" %}
+{% block title %}landRAG{% endblock %}
+
+{% block styles %}
+<style>
+    /* ── Layout ── */
+    .app { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+        width: 220px;
+        min-width: 220px;
+        background: #f7f7f8;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid #e5e5e5;
+        transition: transform 0.25s ease;
+        z-index: 100;
+    }
+    .sidebar.collapsed { transform: translateX(-220px); }
+    .sidebar-header {
+        padding: 18px 16px 12px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .logo { font-size: 1.2rem; font-weight: 700; color: #1a1a1a; text-decoration: none; }
+    .logo span { color: #2563eb; }
+    .new-chat-btn {
+        display: flex; align-items: center; gap: 8px;
+        width: 100%; margin-top: 12px;
+        padding: 8px 12px;
+        background: #2563eb; color: #fff;
+        border: none; border-radius: 8px;
+        font-size: 0.875rem; font-weight: 500;
+        cursor: pointer; transition: background 0.15s;
+    }
+    .new-chat-btn:hover { background: #1d4ed8; }
+    .new-chat-btn svg { flex-shrink: 0; }
+    .sidebar-conversations { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .conv-group-label {
+        padding: 6px 16px 2px;
+        font-size: 0.72rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.05em;
+        color: #999;
+    }
+    .conv-item {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 7px 12px 7px 16px;
+        cursor: pointer; border-radius: 6px; margin: 1px 8px;
+        font-size: 0.85rem; color: #333;
+        transition: background 0.1s;
+    }
+    .conv-item:hover { background: #ebebec; }
+    .conv-item.active { background: #e4e4f0; color: #1a1a1a; font-weight: 500; }
+    .conv-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .conv-delete {
+        opacity: 0; padding: 2px 5px;
+        background: none; border: none;
+        color: #888; cursor: pointer; border-radius: 4px;
+        font-size: 0.8rem; line-height: 1; flex-shrink: 0;
+    }
+    .conv-item:hover .conv-delete { opacity: 1; }
+    .conv-delete:hover { background: #ddd; color: #555; }
+    .sidebar-footer {
+        padding: 12px 16px;
+        border-top: 1px solid #e5e5e5;
+    }
+    .corpus-status-mini {
+        font-size: 0.75rem; color: #888;
+        line-height: 1.5;
+    }
+    .corpus-status-mini strong { color: #555; }
+    .corpus-dot {
+        display: inline-block; width: 7px; height: 7px;
+        background: #22c55e; border-radius: 50%; margin-right: 4px;
+    }
+
+    /* ── Main area ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    /* ── Topbar ── */
+    .topbar {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e5e5e5;
+        background: #fff;
+    }
+    .topbar-toggle {
+        display: none;
+        background: none; border: none; cursor: pointer;
+        color: #555; padding: 4px;
+    }
+    .topbar-title { font-size: 0.95rem; font-weight: 600; color: #1a1a1a; }
+
+    /* ── Messages ── */
+    .messages {
+        flex: 1; overflow-y: auto;
+        padding: 24px 0;
+        display: flex; flex-direction: column; gap: 0;
+    }
+    .message-row {
+        padding: 4px 24px;
+        display: flex; flex-direction: column;
+    }
+    .message-row.user { align-items: flex-end; }
+    .message-row.assistant { align-items: flex-start; }
+
+    /* User bubble */
+    .user-bubble {
+        max-width: 72%;
+        background: #eef2ff;
+        border-radius: 16px 16px 4px 16px;
+        padding: 10px 16px;
+        font-size: 0.9375rem;
+        color: #1a1a1a;
+        line-height: 1.55;
+    }
+
+    /* Assistant message */
+    .assistant-body {
+        max-width: 820px; width: 100%;
+        font-size: 0.9375rem; line-height: 1.7;
+        color: #1a1a1a;
+    }
+    .assistant-body p { margin: 0 0 0.7em; }
+    .assistant-body p:last-child { margin-bottom: 0; }
+    .assistant-body ul, .assistant-body ol { padding-left: 1.4em; margin: 0 0 0.7em; }
+    .assistant-body li { margin-bottom: 0.25em; }
+    .assistant-body h1, .assistant-body h2, .assistant-body h3 {
+        margin: 0.8em 0 0.4em; font-weight: 600;
+    }
+    .assistant-body h1 { font-size: 1.15em; }
+    .assistant-body h2 { font-size: 1.05em; }
+    .assistant-body h3 { font-size: 0.95em; }
+    .assistant-body code {
+        background: #f3f4f6; padding: 1px 5px; border-radius: 3px;
+        font-size: 0.875em; font-family: ui-monospace, monospace;
+    }
+    .assistant-body pre {
+        background: #f3f4f6; padding: 12px 16px; border-radius: 6px;
+        overflow-x: auto; margin: 0 0 0.7em;
+    }
+    .assistant-body pre code { background: none; padding: 0; }
+    .assistant-body blockquote {
+        border-left: 3px solid #c7d2fe; margin: 0 0 0.7em;
+        padding: 4px 12px; color: #555;
+    }
+    .assistant-body strong { font-weight: 600; }
+
+    /* Citation badges */
+    .citation-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px;
+        background: #2563eb; color: #fff;
+        border-radius: 50%; font-size: 0.68rem; font-weight: 700;
+        cursor: pointer; text-decoration: none;
+        vertical-align: super; margin: 0 1px;
+        transition: background 0.15s;
+        flex-shrink: 0;
+    }
+    .citation-badge:hover { background: #1d4ed8; }
+
+    /* Source cards */
+    .sources-section { margin-top: 12px; max-width: 820px; width: 100%; }
+    .sources-toggle {
+        display: flex; align-items: center; gap: 6px;
+        background: none; border: none; cursor: pointer;
+        font-size: 0.8rem; color: #888; padding: 0;
+        transition: color 0.15s;
+    }
+    .sources-toggle:hover { color: #555; }
+    .sources-toggle svg { transition: transform 0.2s; }
+    .sources-toggle.open svg { transform: rotate(90deg); }
+    .sources-list { display: none; margin-top: 8px; }
+    .sources-list.open { display: flex; flex-wrap: wrap; gap: 8px; }
+    .source-card {
+        background: #f9fafb; border: 1px solid #e5e5e5;
+        border-radius: 8px; padding: 10px 14px;
+        font-size: 0.8rem; color: #333;
+        width: calc(50% - 4px); min-width: 240px;
+        transition: border-color 0.15s;
+    }
+    .source-card:target, .source-card.highlighted {
+        border-color: #2563eb; background: #eff6ff;
+    }
+    .source-card-header {
+        display: flex; align-items: flex-start; gap: 6px;
+        margin-bottom: 4px;
+    }
+    .source-ref {
+        background: #2563eb; color: #fff;
+        border-radius: 50%; width: 18px; height: 18px;
+        font-size: 0.68rem; font-weight: 700;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0; margin-top: 1px;
+    }
+    .source-title { font-weight: 600; color: #1a1a1a; flex: 1; line-height: 1.4; }
+    .source-meta { color: #888; font-size: 0.77rem; margin-bottom: 5px; }
+    .source-excerpt {
+        color: #555; line-height: 1.5;
+        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .source-link {
+        display: inline-block; margin-top: 5px;
+        color: #2563eb; text-decoration: none; font-size: 0.77rem;
+    }
+    .source-link:hover { text-decoration: underline; }
+
+    /* Suggested filters */
+    .suggested-filters { margin-top: 10px; max-width: 820px; width: 100%; }
+    .suggested-label { font-size: 0.78rem; color: #888; margin-bottom: 6px; }
+    .suggested-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .suggested-chip {
+        padding: 3px 10px; border-radius: 12px;
+        background: #f3f4f6; border: 1px solid #e5e5e5;
+        font-size: 0.78rem; color: #555; cursor: pointer;
+        transition: background 0.1s, border-color 0.1s;
+    }
+    .suggested-chip:hover { background: #eef2ff; border-color: #c7d2fe; color: #2563eb; }
+
+    /* ── Input area ── */
+    .input-area {
+        border-top: 1px solid #e5e5e5;
+        background: #fff;
+        padding: 12px 24px 16px;
+    }
+    .filter-chips {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        margin-bottom: 8px; min-height: 0;
+    }
+    .filter-chip {
+        display: flex; align-items: center; gap: 5px;
+        padding: 3px 10px 3px 12px;
+        background: #eef2ff; border: 1px solid #c7d2fe;
+        border-radius: 12px; font-size: 0.8rem; color: #2563eb;
+    }
+    .filter-chip-key { font-weight: 500; }
+    .filter-chip-remove {
+        background: none; border: none; cursor: pointer;
+        color: #6b7280; padding: 0; font-size: 0.8rem;
+        line-height: 1; display: flex; align-items: center;
+    }
+    .filter-chip-remove:hover { color: #1a1a1a; }
+    .add-filter-btn {
+        display: flex; align-items: center; gap: 4px;
+        padding: 3px 10px;
+        background: none; border: 1px dashed #d1d5db;
+        border-radius: 12px; font-size: 0.8rem; color: #888;
+        cursor: pointer; transition: border-color 0.1s, color 0.1s;
+    }
+    .add-filter-btn:hover { border-color: #2563eb; color: #2563eb; }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .textarea-wrap { flex: 1; position: relative; }
+    #chat-input {
+        width: 100%; resize: none; overflow: hidden;
+        padding: 10px 14px;
+        border: 1px solid #d1d5db; border-radius: 10px;
+        font-size: 0.9375rem; font-family: inherit;
+        line-height: 1.5; background: #fff; color: #1a1a1a;
+        outline: none; transition: border-color 0.15s;
+        min-height: 44px; max-height: 200px;
+    }
+    #chat-input:focus { border-color: #2563eb; }
+    #chat-input::placeholder { color: #aaa; }
+    .send-btn, .stop-btn {
+        width: 40px; height: 40px; border-radius: 10px;
+        border: none; cursor: pointer; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s;
+    }
+    .send-btn { background: #2563eb; color: #fff; }
+    .send-btn:hover { background: #1d4ed8; }
+    .send-btn:disabled { background: #c7d2fe; cursor: not-allowed; }
+    .stop-btn { background: #fee2e2; color: #dc2626; display: none; }
+    .stop-btn:hover { background: #fecaca; }
+    .stop-btn.visible { display: flex; }
+    .input-hint { font-size: 0.73rem; color: #bbb; margin-top: 5px; text-align: right; }
+
+    /* ── Empty state ── */
+    .empty-state {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        flex-direction: column; text-align: center;
+        padding: 40px 24px;
+    }
+    .empty-logo { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+    .empty-logo span { color: #2563eb; }
+    .empty-desc { color: #888; font-size: 0.95rem; max-width: 420px; line-height: 1.6; margin-bottom: 24px; }
+    .empty-corpus { font-size: 0.8rem; color: #aaa; margin-bottom: 28px; }
+    .starter-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 600px; }
+    .starter-chip {
+        padding: 8px 16px; border-radius: 20px;
+        background: #f7f7f8; border: 1px solid #e5e5e5;
+        font-size: 0.85rem; color: #333; cursor: pointer;
+        transition: background 0.1s, border-color 0.1s;
+        text-align: left; max-width: 280px;
+    }
+    .starter-chip:hover { background: #eef2ff; border-color: #c7d2fe; color: #2563eb; }
+
+    /* ── Filter modal ── */
+    .filter-modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.35); z-index: 200;
+        align-items: flex-start; justify-content: center; padding-top: 80px;
+    }
+    .filter-modal-overlay.open { display: flex; }
+    .filter-modal {
+        background: #fff; border-radius: 12px;
+        padding: 24px; width: 440px; max-width: calc(100vw - 48px);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+    .filter-modal h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+    .filter-field { margin-bottom: 14px; }
+    .filter-field label { display: block; font-size: 0.8rem; font-weight: 500; color: #555; margin-bottom: 5px; }
+    .filter-field select {
+        width: 100%; padding: 7px 10px; border: 1px solid #d1d5db; border-radius: 7px;
+        font-size: 0.875rem; background: #fff; color: #1a1a1a; outline: none;
+    }
+    .filter-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .btn-ghost {
+        padding: 7px 16px; border-radius: 7px;
+        border: 1px solid #d1d5db; background: none;
+        font-size: 0.875rem; cursor: pointer; color: #555;
+    }
+    .btn-ghost:hover { background: #f3f4f6; }
+    .btn-primary {
+        padding: 7px 16px; border-radius: 7px;
+        border: none; background: #2563eb; color: #fff;
+        font-size: 0.875rem; cursor: pointer; font-weight: 500;
+    }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    /* ── Streaming cursor ── */
+    .cursor {
+        display: inline-block; width: 2px; height: 1em;
+        background: #1a1a1a; margin-left: 2px;
+        vertical-align: text-bottom;
+        animation: blink 0.9s steps(1) infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+        .sidebar { position: absolute; top: 0; bottom: 0; left: 0; }
+        .sidebar.collapsed { transform: translateX(-220px); }
+        .topbar-toggle { display: flex; }
+        .source-card { width: 100%; }
+        .user-bubble { max-width: 88%; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="logo"><span>land</span>RAG</a>
+            <button class="new-chat-btn" onclick="newChat()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New chat
+            </button>
+        </div>
+        <div class="sidebar-conversations" id="sidebar-conversations"></div>
+        <div class="sidebar-footer">
+            <div class="corpus-status-mini" id="corpus-status-mini">
+                <span class="corpus-dot"></span>Loading corpus…
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+        <div class="topbar">
+            <button class="topbar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span class="topbar-title" id="topbar-title">landRAG</span>
+        </div>
+
+        <!-- Message thread -->
+        <div class="messages" id="messages"></div>
+
+        <!-- Input area -->
+        <div class="input-area">
+            <div class="filter-chips" id="filter-chips"></div>
+            <div class="input-row">
+                <div class="textarea-wrap">
+                    <textarea id="chat-input" rows="1"
+                        placeholder="Ask about UK planning decisions, EIAs, inspector reports…"
+                        oninput="autoGrow(this)"
+                        onkeydown="handleInputKey(event)"></textarea>
+                </div>
+                <button class="stop-btn" id="stop-btn" onclick="stopStreaming()" title="Stop">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                </button>
+                <button class="send-btn" id="send-btn" onclick="submitInput()" title="Send (Enter)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                </button>
+            </div>
+            <div class="input-hint">Enter to send &middot; Shift+Enter for new line</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter modal -->
+<div class="filter-modal-overlay" id="filter-modal-overlay" onclick="closeFilterModal(event)">
+    <div class="filter-modal">
+        <h3>Add filter</h3>
+        <div class="filter-field">
+            <label for="fm-project-type">Project type</label>
+            <select id="fm-project-type">
+                <option value="">Any</option>
+                <option value="onshore_wind">Onshore Wind</option>
+                <option value="offshore_wind">Offshore Wind</option>
+                <option value="solar">Solar</option>
+                <option value="battery_storage">Battery Storage</option>
+                <option value="gas_peaker">Gas Peaker</option>
+                <option value="transmission">Transmission</option>
+                <option value="hydrogen">Hydrogen</option>
+                <option value="ccus">CCUS</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="fm-topic">Topic</label>
+            <select id="fm-topic">
+                <option value="">Any</option>
+                <option value="noise">Noise</option>
+                <option value="ecology">Ecology</option>
+                <option value="landscape">Landscape</option>
+                <option value="traffic">Traffic</option>
+                <option value="flood_risk">Flood Risk</option>
+                <option value="cultural_heritage">Cultural Heritage</option>
+                <option value="air_quality">Air Quality</option>
+                <option value="socioeconomic">Socioeconomic</option>
+                <option value="cumulative_impact">Cumulative Impact</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="fm-decision">Decision</label>
+            <select id="fm-decision">
+                <option value="">Any</option>
+                <option value="granted">Granted</option>
+                <option value="refused">Refused</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="fm-doc-type">Document type</label>
+            <select id="fm-doc-type">
+                <option value="">Any</option>
+                <option value="decision_letter">Decision Letter</option>
+                <option value="inspector_report">Inspector Report</option>
+                <option value="eia">EIA</option>
+                <option value="shadow_habitats_regulations">Shadow Habitats Regulations</option>
+                <option value="planning_statement">Planning Statement</option>
+                <option value="scoping_opinion">Scoping Opinion</option>
+                <option value="representations">Representations</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div class="filter-modal-actions">
+            <button class="btn-ghost" onclick="closeFilterModal()">Cancel</button>
+            <button class="btn-primary" onclick="applyFilterModal()">Apply</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+'use strict';
+
+// ── marked config ──────────────────────────────────────────────────────────
+marked.setOptions({ breaks: true, gfm: true });
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const LS_KEY = 'landrag_conversations';
+const LS_CORPUS_KEY = 'landrag_corpus_status';
+const CORPUS_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+const STARTER_QUESTIONS = [
+    'What noise conditions are typically imposed on onshore wind farms?',
+    'How have inspectors treated cumulative landscape impact for solar projects?',
+    'What ecological surveys are required for battery storage sites?',
+    'How is flood risk assessed for infrastructure in Zone 3?',
+];
+
+// ── State ──────────────────────────────────────────────────────────────────
+const State = {
+    conversations: {},   // id -> { id, title, createdAt, messages: [] }
+    activeId: null,
+    filters: {},         // e.g. { project_type: 'solar', topic: 'noise' }
+    streaming: false,
+    abortController: null,
+};
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function loadState() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            State.conversations = parsed.conversations || {};
+            State.activeId = parsed.activeId || null;
+            State.filters = parsed.filters || {};
+        }
+    } catch (e) {
+        console.warn('Failed to load state:', e);
+        State.conversations = {};
+        State.activeId = null;
+        State.filters = {};
+    }
+}
+
+function saveState() {
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+            conversations: State.conversations,
+            activeId: State.activeId,
+            filters: State.filters,
+        }));
+    } catch (e) {
+        console.warn('Failed to save state:', e);
+    }
+}
+
+// ── UUID helper ────────────────────────────────────────────────────────────
+function generateId() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
+// ── Date grouping ──────────────────────────────────────────────────────────
+function dateGroup(isoString) {
+    const d = new Date(isoString);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const convDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (convDay >= today) return 'Today';
+    if (convDay >= yesterday) return 'Yesterday';
+    return 'Older';
+}
+
+// ── Conversation management ────────────────────────────────────────────────
+function newChat() {
+    const id = generateId();
+    State.conversations[id] = {
+        id,
+        title: 'New chat',
+        createdAt: new Date().toISOString(),
+        messages: [],
+    };
+    State.activeId = id;
+    saveState();
+    renderSidebar();
+    renderMessages();
+    renderFilters();
+    document.getElementById('topbar-title').textContent = 'New chat';
+    document.getElementById('chat-input').focus();
+}
+
+function switchChat(id) {
+    if (!State.conversations[id]) return;
+    State.activeId = id;
+    saveState();
+    renderSidebar();
+    renderMessages();
+    renderFilters();
+    const title = State.conversations[id].title || 'Chat';
+    document.getElementById('topbar-title').textContent = title;
+    // On mobile close sidebar
+    if (window.innerWidth <= 640) {
+        document.getElementById('sidebar').classList.add('collapsed');
+    }
+}
+
+function deleteChat(id, event) {
+    if (event) event.stopPropagation();
+    delete State.conversations[id];
+    if (State.activeId === id) {
+        const ids = Object.keys(State.conversations);
+        State.activeId = ids.length ? ids[ids.length - 1] : null;
+    }
+    saveState();
+    renderSidebar();
+    renderMessages();
+}
+
+// ── Sidebar rendering ──────────────────────────────────────────────────────
+function renderSidebar() {
+    const container = document.getElementById('sidebar-conversations');
+    const convs = Object.values(State.conversations)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    if (!convs.length) {
+        container.innerHTML = '<div style="padding:12px 16px;font-size:0.8rem;color:#bbb;">No conversations yet</div>';
+        return;
+    }
+
+    // Group by date
+    const groups = {};
+    for (const conv of convs) {
+        const g = dateGroup(conv.createdAt);
+        if (!groups[g]) groups[g] = [];
+        groups[g].push(conv);
+    }
+
+    const ORDER = ['Today', 'Yesterday', 'Older'];
+    let html = '';
+    for (const group of ORDER) {
+        if (!groups[group]) continue;
+        html += `<div class="conv-group-label">${group}</div>`;
+        for (const conv of groups[group]) {
+            const active = conv.id === State.activeId ? ' active' : '';
+            const title = escapeHtml(conv.title || 'New chat');
+            html += `
+                <div class="conv-item${active}" onclick="switchChat('${conv.id}')" data-id="${conv.id}">
+                    <span class="conv-item-title">${title}</span>
+                    <button class="conv-delete" onclick="deleteChat('${conv.id}', event)" title="Delete">&#x2715;</button>
+                </div>`;
+        }
+    }
+    container.innerHTML = html;
+}
+
+// ── Messages rendering ─────────────────────────────────────────────────────
+function renderMessages() {
+    const container = document.getElementById('messages');
+    if (!State.activeId || !State.conversations[State.activeId]) {
+        renderEmptyState();
+        return;
+    }
+    const conv = State.conversations[State.activeId];
+    if (!conv.messages || conv.messages.length === 0) {
+        renderEmptyState();
+        return;
+    }
+
+    let html = '';
+    for (let i = 0; i < conv.messages.length; i++) {
+        const msg = conv.messages[i];
+        if (msg.role === 'user') {
+            html += `
+                <div class="message-row user">
+                    <div class="user-bubble">${escapeHtml(msg.content)}</div>
+                </div>`;
+        } else {
+            const bodyHtml = renderAssistantContent(msg.content || '');
+            const sourcesHtml = msg.sources ? renderSourceCards(msg.sources, `msg-${i}`) : '';
+            const suggestedHtml = msg.suggestedFilters ? renderSuggestedFilters(msg.suggestedFilters) : '';
+            html += `
+                <div class="message-row assistant">
+                    <div class="assistant-body">${bodyHtml}</div>
+                    ${sourcesHtml}
+                    ${suggestedHtml}
+                </div>`;
+        }
+    }
+    container.innerHTML = html;
+    scrollToBottom();
+}
+
+function renderEmptyState() {
+    const corpusLine = getCorpusStatusLine();
+    const chipsHtml = STARTER_QUESTIONS.map(q =>
+        `<button class="starter-chip" onclick="submitStarter(this)">${escapeHtml(q)}</button>`
+    ).join('');
+    document.getElementById('messages').innerHTML = `
+        <div class="empty-state">
+            <div class="empty-logo"><span>land</span>RAG</div>
+            <div class="empty-desc">Semantic search &amp; AI answers for UK planning and environmental permitting documents.</div>
+            <div class="empty-corpus" id="empty-corpus-status">${corpusLine}</div>
+            <div class="starter-chips">${chipsHtml}</div>
+        </div>`;
+}
+
+function getCorpusStatusLine() {
+    try {
+        const raw = localStorage.getItem(LS_CORPUS_KEY);
+        if (raw) {
+            const { data, cachedAt } = JSON.parse(raw);
+            if (data && data.total_documents) {
+                return `${data.total_documents.toLocaleString()} documents indexed`;
+            }
+        }
+    } catch (_) {}
+    return 'Loading corpus status…';
+}
+
+function renderAssistantContent(text) {
+    if (!text) return '<span class="cursor"></span>';
+    const rawHtml = marked.parse(text);
+    return processCitations(rawHtml);
+}
+
+function renderSourceCards(sources, prefix) {
+    if (!sources || sources.length === 0) return '';
+    const cards = sources.map(src => {
+        const meta = [
+            src.project_name,
+            src.project_reference,
+            src.document_type,
+        ].filter(Boolean).join(' · ');
+        const pages = (src.page_start != null)
+            ? `Pages ${src.page_start}–${src.page_end || src.page_start}` : '';
+        return `
+            <div class="source-card" id="${prefix}-src-${src.ref}">
+                <div class="source-card-header">
+                    <span class="source-ref">${src.ref}</span>
+                    <span class="source-title">${escapeHtml(src.document_title || 'Source')}</span>
+                </div>
+                <div class="source-meta">${escapeHtml(meta)}${pages ? ' · ' + escapeHtml(pages) : ''}</div>
+                <div class="source-excerpt">${escapeHtml(src.content || src.highlight || '')}</div>
+                ${src.source_url ? `<a href="${escapeHtml(src.source_url)}" class="source-link" target="_blank" rel="noopener">View source &#x2197;</a>` : ''}
+            </div>`;
+    }).join('');
+
+    const toggleId = `${prefix}-sources-toggle`;
+    const listId = `${prefix}-sources-list`;
+    return `
+        <div class="sources-section">
+            <button class="sources-toggle" id="${toggleId}" onclick="toggleSources('${toggleId}','${listId}')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                ${sources.length} source${sources.length !== 1 ? 's' : ''}
+            </button>
+            <div class="sources-list" id="${listId}">${cards}</div>
+        </div>`;
+}
+
+function toggleSources(toggleId, listId) {
+    const toggle = document.getElementById(toggleId);
+    const list = document.getElementById(listId);
+    if (!toggle || !list) return;
+    const isOpen = list.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+}
+
+function renderSuggestedFilters(filters) {
+    if (!filters || filters.length === 0) return '';
+    const chips = filters.map(f =>
+        `<button class="suggested-chip" onclick="addFilter('${escapeHtml(f.key)}','${escapeHtml(f.value)}')">${escapeHtml(f.label || f.value)}</button>`
+    ).join('');
+    return `
+        <div class="suggested-filters">
+            <div class="suggested-label">Suggested filters:</div>
+            <div class="suggested-chips">${chips}</div>
+        </div>`;
+}
+
+// ── Filters UI ─────────────────────────────────────────────────────────────
+function renderFilters() {
+    const container = document.getElementById('filter-chips');
+    const filters = State.filters;
+    const keys = Object.keys(filters);
+    let html = '';
+    for (const key of keys) {
+        const value = filters[key];
+        const label = key.replace(/_/g, ' ');
+        html += `
+            <div class="filter-chip">
+                <span class="filter-chip-key">${escapeHtml(label)}:</span>
+                <span>${escapeHtml(value)}</span>
+                <button class="filter-chip-remove" onclick="removeFilter('${escapeHtml(key)}')" title="Remove filter">&#x2715;</button>
+            </div>`;
+    }
+    html += `<button class="add-filter-btn" onclick="openFilterPanel()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Filter
+    </button>`;
+    container.innerHTML = html;
+}
+
+function addFilter(key, value) {
+    if (!key || !value) return;
+    State.filters[key] = value;
+    saveState();
+    renderFilters();
+}
+
+function removeFilter(key) {
+    delete State.filters[key];
+    saveState();
+    renderFilters();
+}
+
+function openFilterPanel() {
+    document.getElementById('filter-modal-overlay').classList.add('open');
+}
+
+function closeFilterModal(event) {
+    if (event && event.target !== document.getElementById('filter-modal-overlay')) return;
+    document.getElementById('filter-modal-overlay').classList.remove('open');
+}
+
+function applyFilterModal() {
+    const projectType = document.getElementById('fm-project-type').value;
+    const topic = document.getElementById('fm-topic').value;
+    const decision = document.getElementById('fm-decision').value;
+    const docType = document.getElementById('fm-doc-type').value;
+    if (projectType) State.filters['project_type'] = projectType;
+    if (topic) State.filters['topic'] = topic;
+    if (decision) State.filters['decision'] = decision;
+    if (docType) State.filters['document_type'] = docType;
+    saveState();
+    renderFilters();
+    document.getElementById('filter-modal-overlay').classList.remove('open');
+    // Reset selects
+    ['fm-project-type','fm-topic','fm-decision','fm-doc-type'].forEach(id => {
+        document.getElementById(id).value = '';
+    });
+}
+
+// ── Input handling ─────────────────────────────────────────────────────────
+function handleInputKey(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        submitInput();
+    }
+}
+
+function submitInput() {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text || State.streaming) return;
+    input.value = '';
+    autoGrow(input);
+    sendMessage(text);
+}
+
+function submitStarter(btn) {
+    const text = btn.textContent.trim();
+    if (!text || State.streaming) return;
+    sendMessage(text);
+}
+
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 200) + 'px';
+}
+
+// ── Streaming ──────────────────────────────────────────────────────────────
+async function sendMessage(text) {
+    // Ensure we have an active conversation
+    if (!State.activeId || !State.conversations[State.activeId]) {
+        newChat();
+    }
+    const conv = State.conversations[State.activeId];
+
+    // Build history (exclude current message)
+    const history = conv.messages.map(m => ({ role: m.role, content: m.content }));
+
+    // Append user message
+    conv.messages.push({ role: 'user', content: text });
+    if (conv.title === 'New chat' && conv.messages.length === 1) {
+        conv.title = text.length > 50 ? text.slice(0, 50) + '…' : text;
+        document.getElementById('topbar-title').textContent = conv.title;
+    }
+    saveState();
+
+    // Render user bubble
+    const messagesEl = document.getElementById('messages');
+    // Clear empty state if present
+    const emptyState = messagesEl.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const userRow = document.createElement('div');
+    userRow.className = 'message-row user';
+    userRow.innerHTML = `<div class="user-bubble">${escapeHtml(text)}</div>`;
+    messagesEl.appendChild(userRow);
+    scrollToBottom();
+
+    // Create assistant row
+    const assistantRow = document.createElement('div');
+    assistantRow.className = 'message-row assistant';
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'assistant-body';
+    bodyEl.innerHTML = '<span class="cursor"></span>';
+    assistantRow.appendChild(bodyEl);
+    messagesEl.appendChild(assistantRow);
+    scrollToBottom();
+
+    // Track streaming state
+    State.streaming = true;
+    updateStreamingUI(true);
+
+    const msgIndex = conv.messages.length; // index for the assistant message slot
+    let accumulatedText = '';
+    let sources = null;
+    let suggestedFilters = null;
+
+    State.abortController = new AbortController();
+
+    try {
+        const response = await fetch('/v1/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: text,
+                history: history,
+                filters: Object.keys(State.filters).length ? State.filters : null,
+            }),
+            signal: State.abortController.signal,
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // Split on double newline (SSE event separator)
+            const events = buffer.split('\n\n');
+            buffer = events.pop(); // keep incomplete
+
+            for (const eventText of events) {
+                if (!eventText.trim()) continue;
+                const parsed = parseSSE(eventText);
+                if (!parsed) continue;
+
+                switch (parsed.type) {
+                    case 'sources':
+                        sources = handleSourcesEvent(parsed.data, assistantRow);
+                        break;
+                    case 'token':
+                        accumulatedText += handleTokenEvent(parsed.data, bodyEl);
+                        break;
+                    case 'done':
+                        suggestedFilters = handleDoneEvent(parsed.data, assistantRow);
+                        break;
+                    case 'error':
+                        bodyEl.innerHTML = `<span style="color:#dc2626">Error: ${escapeHtml(parsed.data.message || 'Unknown error')}</span>`;
+                        break;
+                }
+            }
+            scrollToBottom();
+        }
+
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            // Streaming stopped by user — keep partial response
+            removeCursor(bodyEl);
+        } else {
+            bodyEl.innerHTML = `<span style="color:#dc2626">Connection error: ${escapeHtml(err.message)}</span>`;
+        }
+    } finally {
+        removeCursor(bodyEl);
+        State.streaming = false;
+        State.abortController = null;
+        updateStreamingUI(false);
+
+        // Save completed assistant message
+        conv.messages.push({
+            role: 'assistant',
+            content: accumulatedText,
+            sources: sources || [],
+            suggestedFilters: suggestedFilters || [],
+        });
+        saveState();
+        renderSidebar();
+        scrollToBottom();
+    }
+}
+
+function parseSSE(text) {
+    const lines = text.split('\n');
+    let type = 'message';
+    let dataStr = '';
+    for (const line of lines) {
+        if (line.startsWith('event: ')) {
+            type = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+            dataStr += line.slice(6);
+        }
+    }
+    if (!dataStr) return null;
+    try {
+        return { type, data: JSON.parse(dataStr) };
+    } catch (_) {
+        return { type, data: { raw: dataStr } };
+    }
+}
+
+function handleSourcesEvent(data, assistantRow) {
+    const sources = data.sources || [];
+    if (!sources.length) return sources;
+    const msgIdx = assistantRow.dataset.msgIdx || Date.now();
+    const prefix = `live-${msgIdx}`;
+    const sourcesHtml = renderSourceCards(sources, prefix);
+    if (sourcesHtml) {
+        const existing = assistantRow.querySelector('.sources-section');
+        if (existing) existing.remove();
+        assistantRow.insertAdjacentHTML('beforeend', sourcesHtml);
+    }
+    return sources;
+}
+
+function handleTokenEvent(data, bodyEl) {
+    const token = data.token || data.text || '';
+    if (!token) return '';
+    // Remove cursor temporarily
+    removeCursor(bodyEl);
+    // Get current raw text from data attribute or rebuild
+    const current = bodyEl.dataset.rawText || '';
+    const updated = current + token;
+    bodyEl.dataset.rawText = updated;
+    bodyEl.innerHTML = renderAssistantContent(updated);
+    // Re-add cursor
+    bodyEl.insertAdjacentHTML('beforeend', '<span class="cursor"></span>');
+    return token;
+}
+
+function handleDoneEvent(data, assistantRow) {
+    const suggested = data.suggested_filters || [];
+    if (suggested.length) {
+        const existing = assistantRow.querySelector('.suggested-filters');
+        if (existing) existing.remove();
+        const suggestedHtml = renderSuggestedFilters(suggested);
+        if (suggestedHtml) {
+            assistantRow.insertAdjacentHTML('beforeend', suggestedHtml);
+        }
+    }
+    return suggested;
+}
+
+function stopStreaming() {
+    if (State.abortController) {
+        State.abortController.abort();
+    }
+}
+
+function removeCursor(el) {
+    const cursor = el.querySelector('.cursor');
+    if (cursor) cursor.remove();
+}
+
+function updateStreamingUI(streaming) {
+    const sendBtn = document.getElementById('send-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    sendBtn.disabled = streaming;
+    if (streaming) {
+        stopBtn.classList.add('visible');
+    } else {
+        stopBtn.classList.remove('visible');
+    }
+}
+
+// ── Citations ──────────────────────────────────────────────────────────────
+function processCitations(html) {
+    // Replace [n] with clickable citation badges
+    return html.replace(/\[(\d+)\]/g, (match, n) => {
+        return `<span class="citation-badge" onclick="scrollToSource(${n})" title="View source ${n}">${n}</span>`;
+    });
+}
+
+function scrollToSource(ref) {
+    // Find any source card with this ref in the current message area
+    // Sources are rendered with IDs like "live-...-src-n" or "msg-n-src-n"
+    const cards = document.querySelectorAll(`.source-card[id$="-src-${ref}"]`);
+    if (!cards.length) return;
+    const card = cards[cards.length - 1]; // most recent
+    // Open its parent sources list
+    const list = card.closest('.sources-list');
+    if (list && !list.classList.contains('open')) {
+        const toggleId = list.id.replace('-list', '-toggle');
+        const toggle = document.getElementById(toggleId);
+        if (toggle) toggle.classList.add('open');
+        list.classList.add('open');
+    }
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    card.classList.add('highlighted');
+    setTimeout(() => card.classList.remove('highlighted'), 2500);
+}
+
+// ── Corpus status ──────────────────────────────────────────────────────────
+async function loadCorpusStatus() {
+    // Check cache
+    try {
+        const raw = localStorage.getItem(LS_CORPUS_KEY);
+        if (raw) {
+            const { data, cachedAt } = JSON.parse(raw);
+            if (Date.now() - cachedAt < CORPUS_TTL_MS && data) {
+                updateCorpusUI(data);
+                return;
+            }
+        }
+    } catch (_) {}
+
+    try {
+        const res = await fetch('/v1/corpus-status');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        localStorage.setItem(LS_CORPUS_KEY, JSON.stringify({ data, cachedAt: Date.now() }));
+        updateCorpusUI(data);
+    } catch (err) {
+        document.getElementById('corpus-status-mini').innerHTML =
+            '<span class="corpus-dot" style="background:#f59e0b"></span>Corpus unavailable';
+    }
+}
+
+function updateCorpusUI(data) {
+    const total = data.total_documents || 0;
+    const sources = data.sources || [];
+    const mini = document.getElementById('corpus-status-mini');
+    if (mini) {
+        mini.innerHTML = `<span class="corpus-dot"></span><strong>${total.toLocaleString()}</strong> documents indexed`;
+    }
+    // Update empty state if visible
+    const emptyCorpus = document.getElementById('empty-corpus-status');
+    if (emptyCorpus) {
+        emptyCorpus.textContent = `${total.toLocaleString()} documents indexed`;
+    }
+}
+
+// ── Sidebar toggle (mobile) ────────────────────────────────────────────────
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
+}
+
+// ── Scroll helpers ─────────────────────────────────────────────────────────
+function scrollToBottom() {
+    const el = document.getElementById('messages');
+    el.scrollTop = el.scrollHeight;
+}
+
+// ── HTML escape ────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+function init() {
+    loadState();
+
+    // If no conversations, just show empty state
+    if (!State.activeId || !State.conversations[State.activeId]) {
+        renderEmptyState();
+    } else {
+        renderMessages();
+    }
+
+    renderSidebar();
+    renderFilters();
+    loadCorpusStatus();
+
+    // Set topbar title
+    if (State.activeId && State.conversations[State.activeId]) {
+        document.getElementById('topbar-title').textContent =
+            State.conversations[State.activeId].title || 'landRAG';
+    }
+
+    // Focus input
+    document.getElementById('chat-input').focus();
+
+    // Close sidebar on outside click (mobile)
+    document.addEventListener('click', e => {
+        if (window.innerWidth > 640) return;
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebar-toggle');
+        if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+            sidebar.classList.add('collapsed');
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

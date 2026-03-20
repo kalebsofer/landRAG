@@ -18,6 +18,5 @@ htmlcov/
 data/
 
 .claude/
-.superpowers/
-CLAUDE.md
-docs/superpowers/
+./superpowers/
+./docs/superpowers

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from landrag.models.enums import DecisionOutcome, DocumentType, ProjectType, Topic
@@ -48,3 +50,41 @@ class ChunkResult(BaseModel):
 class SearchResponse(BaseModel):
     results: list[ChunkResult]
     total_estimate: int
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1)
+    history: list[ChatMessage] = Field(default_factory=list)
+    filters: dict | None = None
+
+
+class SourceResult(BaseModel):
+    ref: int
+    chunk_id: str
+    content: str
+    score: float
+    document_title: str
+    document_type: str
+    project_name: str
+    project_reference: str
+    project_type: str
+    topic: str | None = None
+    source_url: str
+    page_start: int | None = None
+    page_end: int | None = None
+
+
+class CorpusSourceStatus(BaseModel):
+    portal: str
+    document_count: int
+    last_updated: str
+
+
+class CorpusStatusResponse(BaseModel):
+    sources: list[CorpusSourceStatus]
+    total_documents: int

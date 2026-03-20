@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     # Anthropic
     anthropic_api_key: str = ""
 
+    # Chat
+    chat_model: str = "claude-sonnet-4-20250514"
+    chat_max_tokens: int = 4096
+    rewriter_model: str = "claude-haiku-4-5-20251001"
+
     # GCS
     gcs_bucket_name: str = "landrag-documents"
 
