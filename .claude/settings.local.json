@@ -41,7 +41,19 @@
       "Bash(alembic upgrade:*)",
       "Bash(pytest:*)",
       "Bash(ruff check:*)",
-      "Bash(ruff format:*)"
+      "Bash(ruff format:*)",
+      "Bash(source .env)",
+      "Bash(export GCP_PROJECT=landrag)",
+      "Bash(export CLOUD_SQL_CONNECTION=landrag:europe-west2:landrag-db)",
+      "Bash(export DB_PASSWORD=\"$GCLOUD_DB_PASSWORD\")",
+      "Bash(bash scripts/deploy.sh)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 5484)",
+      "Bash(taskkill //F //PID 32148)",
+      "Bash(taskkill //F //PID 29836)",
+      "Bash(taskkill //F //PID 23676)",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(taskkill //F //IM python3.exe)"
     ]
   }
 }

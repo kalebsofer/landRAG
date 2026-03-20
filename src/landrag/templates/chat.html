@@ -123,6 +123,19 @@
     }
     .assistant-body p { margin: 0 0 0.7em; }
     .assistant-body p:last-child { margin-bottom: 0; }
+    .status-indicator {
+        font-size: 0.85em; color: #888; padding: 8px 0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #2563eb; display: inline-block;
+        animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+    }
     .assistant-body ul, .assistant-body ol { padding-left: 1.4em; margin: 0 0 0.7em; }
     .assistant-body li { margin-bottom: 0.25em; }
     .assistant-body h1, .assistant-body h2, .assistant-body h3 {
@@ -480,10 +493,10 @@ const LS_CORPUS_KEY = 'landrag_corpus_status';
 const CORPUS_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 const STARTER_QUESTIONS = [
-    'What noise conditions are typically imposed on onshore wind farms?',
-    'How have inspectors treated cumulative landscape impact for solar projects?',
-    'What ecological surveys are required for battery storage sites?',
-    'How is flood risk assessed for infrastructure in Zone 3?',
+    'What were the key reasons for refusal in recent planning decisions?',
+    'Summarise the inspector\'s recommendations for Heckington Fen Solar Park',
+    'What conditions were applied to the Kentish Flats Extension?',
+    'How was environmental impact assessed for Rookery South?',
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -879,6 +892,9 @@ async function sendMessage(text) {
     const bodyEl = document.createElement('div');
     bodyEl.className = 'assistant-body';
     bodyEl.innerHTML = '<span class="cursor"></span>';
+    const statusEl = document.createElement('div');
+    statusEl.className = 'status-indicator';
+    assistantRow.appendChild(statusEl);
     assistantRow.appendChild(bodyEl);
     messagesEl.appendChild(assistantRow);
     scrollToBottom();
@@ -929,16 +945,23 @@ async function sendMessage(text) {
                 if (!parsed) continue;
 
                 switch (parsed.type) {
+                    case 'status':
+                        handleStatusEvent(parsed.data, statusEl);
+                        break;
                     case 'sources':
+                        if (statusEl) statusEl.remove();
                         sources = handleSourcesEvent(parsed.data, assistantRow);
                         break;
                     case 'token':
+                        if (statusEl) statusEl.remove();
                         accumulatedText += handleTokenEvent(parsed.data, bodyEl);
                         break;
                     case 'done':
+                        if (statusEl) statusEl.remove();
                         suggestedFilters = handleDoneEvent(parsed.data, assistantRow);
                         break;
                     case 'error':
+                        if (statusEl) statusEl.remove();
                         bodyEl.innerHTML = `<span style="color:#dc2626">Error: ${escapeHtml(parsed.data.message || 'Unknown error')}</span>`;
                         break;
                 }
@@ -989,6 +1012,12 @@ function parseSSE(text) {
     } catch (_) {
         return { type, data: { raw: dataStr } };
     }
+}
+
+function handleStatusEvent(data, statusEl) {
+    if (!statusEl) return;
+    const text = data.text || '';
+    statusEl.innerHTML = `<span class="status-dot"></span> ${escapeHtml(text)}`;
 }
 
 function handleSourcesEvent(data, assistantRow) {

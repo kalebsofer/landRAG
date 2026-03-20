@@ -17,7 +17,13 @@ logger = logging.getLogger(__name__)
 
 def _to_chunk_results(raw_results: list[dict]) -> list[ChunkResult]:
     """Convert raw search results dicts to ChunkResult models."""
-    return [ChunkResult(**r) for r in raw_results]
+    results = []
+    for r in raw_results:
+        # Pinecone may return empty string for topic — normalize to None
+        if not r.get("topic"):
+            r["topic"] = None
+        results.append(ChunkResult(**r))
+    return results
 
 
 def _to_source_results(chunks: list[ChunkResult]) -> list[dict]:
@@ -51,17 +57,25 @@ async def chat_stream(
     settings = get_settings()
     history = history or []
 
-    # Step 1-2: Query rewriting (runs in thread to avoid blocking)
+    # Step 1-2: Query rewriting
+    yield format_sse_event("status", {"text": "Understanding your question..."})
     rewrite_result = await asyncio.to_thread(rewrite_query, message, history)
     rewritten_query = rewrite_result["query"]
     suggested_filters = rewrite_result["filters"]
 
     # Step 3: Merge filters
     merged = merge_filters(explicit_filters or {}, suggested_filters)
+    # Ensure all filter values are lists (rewriter may return scalars)
+    for key, val in list(merged.items()):
+        if val is not None and not isinstance(val, list):
+            merged[key] = [val]
     search_filters = SearchFilters(**merged) if merged else None
 
-    # Step 3: Retrieve (runs in thread)
-    raw = await asyncio.to_thread(execute_search_pipeline, rewritten_query, search_filters, 10)
+    # Step 3: Retrieve
+    yield format_sse_event("status", {"text": "Searching planning documents..."})
+    raw = await asyncio.to_thread(
+        execute_search_pipeline, rewritten_query, search_filters, 10
+    )
     raw_results = raw["results"]
 
     # Step 4: Deduplicate
@@ -70,6 +84,7 @@ async def chat_stream(
     chunks = chunks[:5]  # top 5 for generation
 
     # Step 5: Emit sources
+    yield format_sse_event("status", {"text": f"Found {len(chunks)} relevant sources"})
     source_dicts = _to_source_results(chunks)
     yield format_sse_event("sources", source_dicts)
 
@@ -85,6 +100,7 @@ async def chat_stream(
         yield format_sse_event("done", {"suggested_filters": suggested_filters})
         return
 
+    yield format_sse_event("status", {"text": "Generating response..."})
     system_prompt = build_system_prompt(chunks)
     messages = build_messages(history, message)
 

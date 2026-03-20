@@ -63,6 +63,9 @@ def rewrite_query(message: str, history: list[ChatMessage]) -> dict:
     )
 
     raw = response.content[0].text.strip()
+    # Strip markdown code fences if present (Haiku sometimes wraps in ```json ... ```)
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
     try:
         parsed = json.loads(raw)
         return {
